@@ -78,7 +78,7 @@ def generate_article(topic: str) -> str:
     )
 
     response = client.chat.completions.create(
-        model="sarvam-m",
+        model="sarvam-105b-conversations",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
