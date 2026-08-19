@@ -1,0 +1,60 @@
+name: Generate post and deploy site
+
+on:
+  schedule:
+    - cron: "30 2 * * *"   # runs daily at 8:00 AM IST (02:30 UTC)
+  workflow_dispatch: {}     # lets you also trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install openai
+
+      - name: Generate today's article
+        env:
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+        run: python scripts/generate_post.py
+
+      - name: Commit new post
+        run: |
+          git config user.name "auto-publisher"
+          git config user.email "actions@github.com"
+          git add content/posts data/used_topics.json
+          git diff --cached --quiet || git commit -m "Auto: new post $(date -u +'%Y-%m-%d')"
+          git push
+
+      - name: Set up Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "latest"
+          extended: true
+
+      - name: Build site
+        run: hugo --minify
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public

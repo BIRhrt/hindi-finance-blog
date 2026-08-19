@@ -1,0 +1,30 @@
+baseURL = "https://YOUR-USERNAME.github.io/YOUR-REPO/"
+languageCode = "hi-in"
+title = "पैसा और योजना"  # Money & Schemes -- change to your own site name
+theme = "PaperMod"
+paginate = 10
+
+[params]
+  ShowReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  defaultTheme = "auto"
+
+[[menu.main]]
+  name = "होम"
+  url = "/"
+  weight = 1
+
+[[menu.main]]
+  name = "About"
+  url = "/about/"
+  weight = 2
+
+[[menu.main]]
+  name = "Privacy Policy"
+  url = "/privacy-policy/"
+  weight = 3
+
+[markup.goldmark.renderer]
+  unsafe = true
