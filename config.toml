@@ -5,7 +5,7 @@ theme = "PaperMod"
 paginate = 10
 
 [params]
-  ShowReadingTime = true
+  ShowReadingTime = false
   ShowShareButtons = false
   ShowPostNavLinks = true
   ShowBreadCrumbs = true
