@@ -6,7 +6,7 @@ paginate = 10
 
 [params]
   ShowReadingTime = true
-  ShowShareButtons = true
+  ShowShareButtons = false
   ShowPostNavLinks = true
   ShowBreadCrumbs = true
   defaultTheme = "auto"
