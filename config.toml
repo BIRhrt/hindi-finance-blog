@@ -11,6 +11,9 @@ paginate = 10
   ShowBreadCrumbs = true
   defaultTheme = "auto"
 
+[params.analytics.google]
+  SiteVerificationTag = "Ec2QYL1BlegCGmpeCZCZSMWjc4nx95MUi5DtS0QZe78"
+
 [[menu.main]]
   name = "होम"
   url = "/"

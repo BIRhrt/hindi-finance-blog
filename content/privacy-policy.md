@@ -7,6 +7,6 @@ This site uses Google AdSense to display advertisements. Google, as a third-part
 
 This site does not knowingly collect personal information beyond standard analytics and advertising cookies. By using this site, you consent to the use of cookies as described here and in Google's own privacy policy.
 
-If you have any questions about this policy, contact: your-email@example.com
+If you have any questions about this policy, contact: hartik.work@gmail.com
 
 *(Replace the placeholder email above with your real contact email before publishing.)*
