@@ -1,4 +1,4 @@
-baseURL = "https://BIRhrt.github.io/hindi-finance-blog/"
+baseURL = "https://birhrt.github.io/hindi-finance-blog/"
 languageCode = "hi-in"
 title = "पैसा और योजना"  # Money & Schemes -- change to your own site name
 theme = "PaperMod"
