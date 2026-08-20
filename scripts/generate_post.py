@@ -55,7 +55,7 @@ def slugify_fallback(topic: str) -> str:
     return hashlib.sha1(topic.encode("utf-8")).hexdigest()[:8]
 
 
-def generate_article(topic: str) -> tuple[str, str]:
+def generate_article(topic: str) -> tuple[str, str, str]:
     system_prompt = (
         "आप एक अनुभवी वित्तीय लेखक हैं जो आम भारतीय पाठकों के लिए सरल हिंदी में "
         "स्पष्ट, सटीक और उपयोगी लेख लिखते हैं। जानकारी सामान्य शिक्षा के उद्देश्य से है, "
@@ -75,9 +75,10 @@ def generate_article(topic: str) -> tuple[str, str]:
         "IMPORTANT FORMATTING INSTRUCTIONS:\n"
         "Your response must be in the following format exactly:\n"
         "SLUG: <an english/hinglish url slug for this topic, e.g. epf-paisa-kaise-nikale>\n"
+        "DESCRIPTION: <a short 150-character meta description in Hindi summarizing the article>\n"
         "CONTENT:\n"
         "<the hindi markdown article body without H1>\n\n"
-        "Do not include any other text before SLUG: or between SLUG: and CONTENT:."
+        "Do not include any other text before SLUG: or between SLUG:, DESCRIPTION: and CONTENT:."
     )
 
     response = client.chat.completions.create(
@@ -92,6 +93,7 @@ def generate_article(topic: str) -> tuple[str, str]:
     raw_text = response.choices[0].message.content.strip()
     
     slug = ""
+    description = ""
     body = raw_text
     
     if "CONTENT:" in raw_text:
@@ -105,19 +107,26 @@ def generate_article(topic: str) -> tuple[str, str]:
                 import re
                 slug = re.sub(r'[^a-z0-9\-]', '', slug.replace(' ', '-'))
                 slug = re.sub(r'\-+', '-', slug).strip('-')
-                break
+            elif line.startswith("DESCRIPTION:"):
+                description = line.replace("DESCRIPTION:", "").strip()
+                # strip quotes if ai added them
+                if description.startswith('"') and description.endswith('"'):
+                    description = description[1:-1]
                 
     if not slug:
         slug = slugify_fallback(topic)
         
-    return slug, body
+    return slug, description, body
 
 
-def build_front_matter(title: str, date: str) -> str:
+def build_front_matter(title: str, date: str, description: str) -> str:
+    # clean description for yaml
+    desc_clean = description.replace('"', '\\"')
     return (
         "---\n"
         f'title: "{title}"\n'
         f"date: {date}\n"
+        f'description: "{desc_clean}"\n'
         "draft: false\n"
         'tags: ["personal-finance", "government-schemes"]\n'
         "---\n\n"
@@ -129,11 +138,11 @@ def main():
     topic = pick_topic()
     print(f"Generating article for topic: {topic}")
 
-    slug, body = generate_article(topic)
+    slug, description, body = generate_article(topic)
     date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S+00:00")
     filename = POSTS_DIR / f"{datetime.date.today().isoformat()}-{slug}.md"
 
-    content = build_front_matter(topic, date) + body + "\n"
+    content = build_front_matter(topic, date, description) + body + "\n"
     filename.write_text(content, encoding="utf-8")
     print(f"Saved: {filename}")
 
