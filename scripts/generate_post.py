@@ -50,14 +50,12 @@ def pick_topic():
     return topic
 
 
-def slugify(text: str) -> str:
-    # simple transliteration-free slug: use date + short hash since topic is Hindi
+def slugify_fallback(topic: str) -> str:
     import hashlib
-    h = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
-    return h
+    return hashlib.sha1(topic.encode("utf-8")).hexdigest()[:8]
 
 
-def generate_article(topic: str) -> str:
+def generate_article(topic: str) -> tuple[str, str]:
     system_prompt = (
         "आप एक अनुभवी वित्तीय लेखक हैं जो आम भारतीय पाठकों के लिए सरल हिंदी में "
         "स्पष्ट, सटीक और उपयोगी लेख लिखते हैं। जानकारी सामान्य शिक्षा के उद्देश्य से है, "
@@ -73,8 +71,13 @@ def generate_article(topic: str) -> str:
         "- चरण-दर-चरण प्रक्रिया\n"
         "- जरूरी दस्तावेज़\n"
         "- आम गलतियाँ या सावधानियाँ\n"
-        "- निष्कर्ष के साथ डिस्क्लेमर कि यह सामान्य जानकारी है, वित्तीय सलाह नहीं\n"
-        "केवल लेख का मुख्य भाग दें, कोई शीर्षक Markdown H1 (# ) मत जोड़ें — वह अलग से जोड़ा जाएगा।"
+        "- निष्कर्ष के साथ डिस्क्लेमर कि यह सामान्य जानकारी है, वित्तीय सलाह नहीं\n\n"
+        "IMPORTANT FORMATTING INSTRUCTIONS:\n"
+        "Your response must be in the following format exactly:\n"
+        "SLUG: <an english/hinglish url slug for this topic, e.g. epf-paisa-kaise-nikale>\n"
+        "CONTENT:\n"
+        "<the hindi markdown article body without H1>\n\n"
+        "Do not include any other text before SLUG: or between SLUG: and CONTENT:."
     )
 
     response = client.chat.completions.create(
@@ -86,7 +89,28 @@ def generate_article(topic: str) -> str:
         temperature=0.6,
         max_tokens=1800,
     )
-    return response.choices[0].message.content.strip()
+    raw_text = response.choices[0].message.content.strip()
+    
+    slug = ""
+    body = raw_text
+    
+    if "CONTENT:" in raw_text:
+        parts = raw_text.split("CONTENT:", 1)
+        header = parts[0]
+        body = parts[1].strip()
+        
+        for line in header.split("\n"):
+            if line.startswith("SLUG:"):
+                slug = line.replace("SLUG:", "").strip().lower()
+                import re
+                slug = re.sub(r'[^a-z0-9\-]', '', slug.replace(' ', '-'))
+                slug = re.sub(r'\-+', '-', slug).strip('-')
+                break
+                
+    if not slug:
+        slug = slugify_fallback(topic)
+        
+    return slug, body
 
 
 def build_front_matter(title: str, date: str) -> str:
@@ -105,9 +129,8 @@ def main():
     topic = pick_topic()
     print(f"Generating article for topic: {topic}")
 
-    body = generate_article(topic)
+    slug, body = generate_article(topic)
     date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    slug = slugify(topic + date)
     filename = POSTS_DIR / f"{datetime.date.today().isoformat()}-{slug}.md"
 
     content = build_front_matter(topic, date) + body + "\n"
